@@ -458,3 +458,118 @@
       function showMsg(text, type) {
         var el = document.getElementById("scMsg");
         el.textContent = text;
+        el.className = "sc-msg " + (type || "info");
+        el.style.display = "block";
+        setTimeout(function() { el.style.display = "none"; }, 5500);
+      }
+
+      function loadSettings() {
+        try {
+          var raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) {
+            CONTRACT_ADDRESS = raw.trim();
+            var inp = document.getElementById("settingsContract");
+            if (inp) inp.value = CONTRACT_ADDRESS;
+          }
+        } catch (e) {}
+      }
+
+      function saveSettings() {
+        var inp = document.getElementById("settingsContract");
+        if (inp) {
+          CONTRACT_ADDRESS = inp.value.trim();
+          try {
+            localStorage.setItem(STORAGE_KEY, CONTRACT_ADDRESS);
+            showMsg("Settings saved.", "info");
+          } catch (e) { showMsg("Could not save.", "err"); }
+        }
+      }
+
+      function hashString(s) {
+        var h = 0;
+        var str = String(s);
+        for (var i = 0; i < str.length; i++) {
+          h = ((h << 5) - h) + str.charCodeAt(i) | 0;
+        }
+        var bytes = new Uint8Array(32);
+        for (var i = 0; i < 32; i++) {
+          h = ((h << 5) - h) + (i + str.length) | 0;
+          bytes[i] = (h >>> (i % 24)) & 0xff;
+        }
+        return "0x" + Array.from(bytes).map(function(b) { return ("0" + b.toString(16)).slice(-2); }).join("");
+      }
+
+      function tabs() {
+        document.querySelectorAll(".sc-tab").forEach(function(tab) {
+          tab.addEventListener("click", function() {
+            var panelId = "panel-" + tab.getAttribute("data-panel");
+            document.querySelectorAll(".sc-tab").forEach(function(t) { t.classList.remove("active"); });
+            document.querySelectorAll(".sc-panel").forEach(function(p) { p.classList.remove("active"); });
+            tab.classList.add("active");
+            var panel = document.getElementById(panelId);
+            if (panel) panel.classList.add("active");
+          });
+        });
+      }
+
+      function connectBtn() {
+        var btn = document.getElementById("scConnectBtn");
+        var addrEl = document.getElementById("scWalletAddr");
+        btn.addEventListener("click", function() {
+          if (typeof window.ethereum === "undefined") {
+            showMsg("No Ethereum provider found.", "err");
+            return;
+          }
+          window.ethereum.request({ method: "eth_requestAccounts" })
+            .then(function(accounts) {
+              if (accounts.length) {
+                var a = accounts[0];
+                addrEl.textContent = a.slice(0, 6) + "…" + a.slice(-4);
+                showMsg("Wallet connected.", "info");
+              }
+            })
+            .catch(function(e) { showMsg("Connection failed: " + (e.message || "unknown"), "err"); });
+        });
+      }
+
+      function setDashboard() {
+        document.getElementById("scFeeBps").textContent = CONTRACT_ADDRESS ? "12" : "—";
+        document.getElementById("scPaused").textContent = CONTRACT_ADDRESS ? "false" : "—";
+        document.getElementById("scVault").textContent = VAULT;
+        document.getElementById("scTreasury").textContent = TREASURY;
+        document.getElementById("scListedIds").innerHTML = "<li>Set contract address in Settings to load listed spell IDs.</li>";
+      }
+
+      function runCalc() {
+        var priceStr = document.getElementById("calcPrice").value.trim();
+        var feeBpsStr = document.getElementById("calcFeeBps").value.trim();
+        var price = parseInt(priceStr, 10);
+        var feeBps = parseInt(feeBpsStr, 10);
+        var resultEl = document.getElementById("calcResult");
+        if (isNaN(price) || price < 0 || isNaN(feeBps) || feeBps < 0 || feeBps > 350) {
+          resultEl.textContent = "Invalid input. Fee bps 0–350.";
+          return;
+        }
+        var fee = Math.floor((price * feeBps) / BPS_BASE);
+        var toSeller = price - fee;
+        resultEl.textContent = "Fee: " + fee + " wei · To seller: " + toSeller + " wei";
+      }
+
+      function listHandler() {
+        document.getElementById("btnList").addEventListener("click", function() {
+          var title = document.getElementById("listTitle").value.trim();
+          var category = document.getElementById("listCategory").value.trim();
+          var price = document.getElementById("listPrice").value.trim();
+          if (!title || !category || !price) {
+            showMsg("Title, category, and price required.", "err");
+            return;
+          }
+          if (!CONTRACT_ADDRESS) {
+            showMsg("Set Spella contract address in Settings.", "warn");
+            return;
+          }
+          var titleHash = hashString(title);
+          var categoryHash = hashString(category);
+          showMsg("List would call listSpell(" + titleHash.slice(0, 18) + "…, " + categoryHash.slice(0, 18) + "…, " + price + ").", "info");
+        });
+      }
