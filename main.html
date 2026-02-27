@@ -228,3 +228,118 @@
     .sc-event-log { max-height: 220px; overflow-y: auto; font-size: 0.72rem; padding: 0.5rem; background: var(--spell-bg); border-radius: var(--spell-radius); border: 1px solid var(--spell-edge); }
     .sc-event-log .evt { display: block; padding: 0.3rem 0; border-bottom: 1px solid rgba(42, 36, 56, 0.6); color: var(--spell-dim); }
     .sc-event-log .evt-name { color: var(--spell-accent); }
+    .sc-trade-row { padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--spell-edge); font-size: 0.78rem; display: flex; justify-content: space-between; align-items: center; }
+    .sc-trade-row:last-child { border-bottom: none; }
+    @media (max-width: 480px) { .sc-wrap { padding: 1rem; } .sc-logo { font-size: 1.4rem; } }
+    .sc-code { font-family: var(--spell-mono); font-size: 0.72rem; background: var(--spell-bg); padding: 0.4rem 0.6rem; border-radius: 4px; word-break: break-all; }
+    .sc-section { margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--spell-edge); }
+    #scTradesList .sc-trade-row:first-child { border-top: none; }
+    .sc-event-log .evt:first-child { padding-top: 0; }
+  </style>
+</head>
+<body>
+  <div class="sc-wrap">
+    <header class="sc-header">
+      <div>
+        <div class="sc-logo">SpellCast</div>
+        <div class="sc-tagline">Spell-Book Trading Platform</div>
+      </div>
+      <div class="sc-wallet-row">
+        <span class="sc-wallet-addr" id="scWalletAddr">Not connected</span>
+        <button type="button" class="sc-btn sc-btn-primary" id="scConnectBtn">Connect</button>
+      </div>
+    </header>
+
+    <div class="sc-hero">
+      <h1>Spell Book Market</h1>
+      <p>List spells by title and category, set your price in wei. Buyers pay and receive the spell; fees go to treasury. Powered by the Spella contract.</p>
+    </div>
+
+    <div class="sc-tabs">
+      <button type="button" class="sc-tab active" data-panel="dashboard">Dashboard</button>
+      <button type="button" class="sc-tab" data-panel="list">List Spell</button>
+      <button type="button" class="sc-tab" data-panel="buy">Buy Spell</button>
+      <button type="button" class="sc-tab" data-panel="my-spells">My Spells</button>
+      <button type="button" class="sc-tab" data-panel="lookup">Spell lookup</button>
+      <button type="button" class="sc-tab" data-panel="calculator">Fee Calculator</button>
+      <button type="button" class="sc-tab" data-panel="trades">Trades</button>
+      <button type="button" class="sc-tab" data-panel="events">Events</button>
+      <button type="button" class="sc-tab" data-panel="constants">Constants</button>
+      <button type="button" class="sc-tab" data-panel="settings">Settings</button>
+      <button type="button" class="sc-tab" data-panel="about">About</button>
+    </div>
+
+    <div id="scMsg" class="sc-msg info" style="display:none;"></div>
+
+    <div class="sc-panel active" id="panel-dashboard">
+      <div class="sc-grid-2">
+        <div class="sc-card">
+          <h3>Platform</h3>
+          <div class="sc-stat">
+            <div class="sc-stat-value" id="scFeeBps">—</div>
+            <div class="sc-stat-label">Fee (bps)</div>
+          </div>
+          <div class="sc-stat">
+            <div class="sc-stat-value" id="scPaused">—</div>
+            <div class="sc-stat-label">Paused</div>
+          </div>
+          <button type="button" class="sc-btn" id="btnSweepFees" style="margin-top:0.5rem;">Sweep fees to treasury</button>
+        </div>
+        <div class="sc-card">
+          <h3>Addresses</h3>
+          <div class="sc-label">Vault</div>
+          <div class="sc-stat-value" style="font-size:0.75rem; word-break:break-all;" id="scVault">—</div>
+          <div class="sc-label" style="margin-top:0.4rem">Treasury</div>
+          <div class="sc-stat-value" style="font-size:0.75rem; word-break:break-all;" id="scTreasury">—</div>
+        </div>
+      </div>
+      <div class="sc-card">
+        <h3>Listed spell IDs</h3>
+        <ul class="sc-list" id="scListedIds"></ul>
+      </div>
+    </div>
+
+    <div class="sc-panel" id="panel-list">
+      <div class="sc-card">
+        <h3>List a spell</h3>
+        <div class="sc-label">Title (string; will be hashed to titleHash)</div>
+        <input type="text" class="sc-input" id="listTitle" placeholder="e.g. Fireball Vol. I" />
+        <div class="sc-label">Category (string; will be hashed)</div>
+        <input type="text" class="sc-input" id="listCategory" placeholder="e.g. combat" />
+        <div class="sc-label">Price (wei)</div>
+        <input type="text" class="sc-input" id="listPrice" placeholder="1000000000000000000" />
+        <button type="button" class="sc-btn sc-btn-primary" id="btnList">List spell</button>
+      </div>
+      <div class="sc-card">
+        <h3>Delist spell</h3>
+        <div class="sc-label">Spell ID</div>
+        <input type="text" class="sc-input" id="delistSpellId" placeholder="1" />
+        <button type="button" class="sc-btn" id="btnDelist">Delist</button>
+      </div>
+      <div class="sc-card">
+        <h3>Update spell price</h3>
+        <div class="sc-label">Spell ID (must be your listed spell)</div>
+        <input type="text" class="sc-input" id="updateSpellId" placeholder="1" />
+        <div class="sc-label">New price (wei)</div>
+        <input type="text" class="sc-input" id="updatePrice" placeholder="2000000" />
+        <button type="button" class="sc-btn" id="btnUpdatePrice">Update price</button>
+      </div>
+    </div>
+
+    <div class="sc-panel" id="panel-buy">
+      <div class="sc-card">
+        <h3>Buy a spell</h3>
+        <div class="sc-label">Spell ID</div>
+        <input type="text" class="sc-input" id="buySpellId" placeholder="1" />
+        <div class="sc-label">Send ETH (wei) — must be &ge; spell price</div>
+        <input type="text" class="sc-input" id="buyAmount" placeholder="1000000000000000000" />
+        <button type="button" class="sc-btn sc-btn-primary" id="btnBuy">Buy spell</button>
+      </div>
+    </div>
+
+    <div class="sc-panel" id="panel-my-spells">
+      <div class="sc-card">
+        <h3>My listed spells</h3>
+        <div class="sc-label">Your wallet must be connected. Spell IDs you listed appear here (mock).</div>
+        <ul class="sc-list" id="scMySpells"></ul>
+      </div>
