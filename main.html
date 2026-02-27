@@ -573,3 +573,115 @@
           showMsg("List would call listSpell(" + titleHash.slice(0, 18) + "…, " + categoryHash.slice(0, 18) + "…, " + price + ").", "info");
         });
       }
+
+      function delistHandler() {
+        document.getElementById("btnDelist").addEventListener("click", function() {
+          var id = document.getElementById("delistSpellId").value.trim();
+          if (!id) { showMsg("Spell ID required.", "err"); return; }
+          showMsg("Delist would call delistSpell(" + id + "). Seller or owner only.", "info");
+        });
+      }
+
+      function updatePriceHandler() {
+        document.getElementById("btnUpdatePrice").addEventListener("click", function() {
+          var id = document.getElementById("updateSpellId").value.trim();
+          var price = document.getElementById("updatePrice").value.trim();
+          if (!id || !price) { showMsg("Spell ID and new price required.", "err"); return; }
+          if (!CONTRACT_ADDRESS) { showMsg("Set contract address first.", "warn"); return; }
+          showMsg("Would call updateSpellPrice(" + id + ", " + price + "). Seller only.", "info");
+        });
+      }
+      updatePriceHandler();
+
+      function buyHandler() {
+        document.getElementById("btnBuy").addEventListener("click", function() {
+          var spellId = document.getElementById("buySpellId").value.trim();
+          var amount = document.getElementById("buyAmount").value.trim();
+          if (!spellId || !amount) {
+            showMsg("Spell ID and amount required.", "err");
+            return;
+          }
+          if (!CONTRACT_ADDRESS) {
+            showMsg("Set Spella contract address in Settings.", "warn");
+            return;
+          }
+          showMsg("Buy would call buySpell(" + spellId + ") with value " + amount + " wei.", "info");
+        });
+      }
+
+      loadSettings();
+      tabs();
+      connectBtn();
+      setDashboard();
+      document.getElementById("btnSweepFees").addEventListener("click", function() {
+        if (!CONTRACT_ADDRESS) { showMsg("Set contract address first.", "warn"); return; }
+        showMsg("Would call sweepFees() to send accumulated fees to treasury.", "info");
+      });
+      listHandler();
+      delistHandler();
+      buyHandler();
+      document.getElementById("btnCalc").addEventListener("click", runCalc);
+      document.getElementById("btnSaveSettings").addEventListener("click", saveSettings);
+      runCalc();
+
+      function buildMockTrades() {
+        var html = "";
+        var samples = [
+          { spellId: 1, buyer: "0x1111…1111", seller: "0x2222…2222", price: "1000000", fee: "120" },
+          { spellId: 2, buyer: "0x3333…3333", seller: "0x4444…4444", price: "2000000", fee: "240" },
+        ];
+        samples.forEach(function(t) {
+          html += "<div class=\"sc-trade-row\"><span>Spell #" + t.spellId + "</span><span>" + t.price + " wei (fee " + t.fee + ")</span></div>";
+        });
+        var el = document.getElementById("scTradesList");
+        if (el) el.innerHTML = html || "<div class=\"sc-trade-row\">No trades yet.</div>";
+      }
+
+      function buildMockEvents() {
+        var events = [
+          { name: "SpellListed", data: "spellId=1 seller=0x… titleHash=0x… categoryHash=0x… priceWei=1000000" },
+          { name: "SpellTraded", data: "tradeId=0x… spellId=1 buyer=0x… seller=0x… priceWei=1000000 feeWei=120" },
+          { name: "SpellDelisted", data: "spellId=1 seller=0x…" },
+          { name: "FeeSwept", data: "to=0x… amountWei=360" },
+        ];
+        var logEl = document.getElementById("scEventLog");
+        if (!logEl) return;
+        logEl.innerHTML = events.map(function(ev) {
+          return "<div class=\"evt\"><span class=\"evt-name\">" + ev.name + "</span> " + ev.data + "</div>";
+        }).join("");
+      }
+
+      function lookupHandler() {
+        document.getElementById("btnLookup").addEventListener("click", function() {
+          var id = document.getElementById("lookupSpellId").value.trim();
+          var resultEl = document.getElementById("lookupResult");
+          if (!id) { resultEl.textContent = "Enter a spell ID."; return; }
+          if (!CONTRACT_ADDRESS) {
+            resultEl.innerHTML = "Set contract address to fetch spell data. Mock: spellId=" + id + " (seller, titleHash, categoryHash, priceWei, listed) would come from getSpell(" + id + ").";
+            return;
+          }
+          resultEl.innerHTML = "Would call getSpell(" + id + ") on contract. Spell ID: " + id + ".";
+        });
+      }
+      lookupHandler();
+
+      buildMockTrades();
+      buildMockEvents();
+      document.getElementById("btnRefreshEvents").addEventListener("click", buildMockEvents);
+
+      function populateMySpells() {
+        var el = document.getElementById("scMySpells");
+        if (!el) return;
+        el.innerHTML = "<li>Connect wallet and set contract to load your listed spell IDs (getListedSpellIdsBySeller).</li>";
+      }
+      populateMySpells();
+
+      // SpellCast connects to Spella: listSpell, buySpell, delistSpell, updateSpellPrice, sweepFees.
+      // Title and category are hashed client-side for demo; production may use keccak256.
+      // Constants: SPEL_BPS_BASE 10000, SPEL_MAX_FEE_BPS 350, SPEL_MAX_SPELLS 128.
+      // Immutable: vault, treasury, spellKeeper set in Spella constructor.
+      // Events: SpellListed, SpellDelisted, SpellTraded, SpellPriceUpdated, FeeSwept, PlatformPauseToggled, FeeBpsUpdated.
+    })();
+  </script>
+</body>
+</html>
