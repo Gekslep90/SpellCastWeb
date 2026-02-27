@@ -343,3 +343,118 @@
         <div class="sc-label">Your wallet must be connected. Spell IDs you listed appear here (mock).</div>
         <ul class="sc-list" id="scMySpells"></ul>
       </div>
+    </div>
+
+    <div class="sc-panel" id="panel-lookup">
+      <div class="sc-card">
+        <h3>Look up spell by ID</h3>
+        <div class="sc-label">Spell ID</div>
+        <input type="text" class="sc-input" id="lookupSpellId" placeholder="1" />
+        <button type="button" class="sc-btn" id="btnLookup">Look up</button>
+        <div id="lookupResult" style="margin-top:0.6rem; font-size:0.8rem;"></div>
+      </div>
+    </div>
+
+    <div class="sc-panel" id="panel-trades">
+      <div class="sc-card">
+        <h3>Recent trades (mock)</h3>
+        <p class="sc-help">Sample trade list; replace with contract events when connected.</p>
+        <div id="scTradesList"></div>
+      </div>
+    </div>
+
+    <div class="sc-panel" id="panel-events">
+      <div class="sc-card">
+        <h3>Event log (mock)</h3>
+        <div class="sc-event-log" id="scEventLog"></div>
+        <button type="button" class="sc-btn" id="btnRefreshEvents" style="margin-top:0.5rem;">Refresh mock</button>
+      </div>
+    </div>
+
+    <div class="sc-panel" id="panel-calculator">
+      <div class="sc-card">
+        <h3>Fee calculator</h3>
+        <p class="sc-help">Fee = price × feeBps / 10000. Seller receives price − fee. SPEL_MAX_FEE_BPS = 350.</p>
+        <div class="sc-calc-row">
+          <div style="flex:1; min-width:120px;">
+            <div class="sc-label">Price (wei)</div>
+            <input type="text" class="sc-input" id="calcPrice" value="1000000" />
+          </div>
+          <div style="flex:1; min-width:80px;">
+            <div class="sc-label">Fee bps</div>
+            <input type="text" class="sc-input" id="calcFeeBps" value="12" />
+          </div>
+          <button type="button" class="sc-btn sc-btn-primary" id="btnCalc">Calculate</button>
+        </div>
+        <div class="sc-calc-result" id="calcResult">—</div>
+      </div>
+    </div>
+
+    <div class="sc-panel" id="panel-constants">
+      <div class="sc-card">
+        <h3>Spella constants</h3>
+        <ul class="sc-constants-list">
+          <li><span>SPEL_BPS_BASE</span><span>10000</span></li>
+          <li><span>SPEL_MAX_FEE_BPS</span><span>350</span></li>
+          <li><span>SPEL_MAX_SPELLS</span><span>128</span></li>
+          <li><span>SPEL_MAX_BATCH_LIST</span><span>20</span></li>
+          <li><span>SPEL_MAX_BATCH_DELIST</span><span>20</span></li>
+          <li><span>SPEL_PLATFORM_SALT</span><span>0x3D8e1F4a7C0b2E5d9F3A6c8E1b4D7f0A3C6e9B2</span></li>
+        </ul>
+        <p class="sc-help" style="margin-top:0.5rem;">Fee is (priceWei * feeBps) / SPEL_BPS_BASE. Seller receives priceWei minus fee. Platform can be paused by owner via setPlatformPaused. Keeper can delist any spell via keeperDelist. Sweep fees with sweepFees() to send accumulated fees to treasury.</p>
+      </div>
+    </div>
+
+    <div class="sc-panel" id="panel-settings">
+      <div class="sc-card">
+        <h3>Contract address</h3>
+        <div class="sc-settings-row">
+          <div style="flex:1;">
+            <div class="sc-label">Spella contract</div>
+            <input type="text" class="sc-input" id="settingsContract" placeholder="0x..." />
+            <p class="sc-help">Saved in localStorage. Deploy Spella.sol and paste address here.</p>
+          </div>
+        </div>
+        <button type="button" class="sc-btn sc-btn-primary" id="btnSaveSettings">Save</button>
+      </div>
+    </div>
+
+    <div class="sc-panel" id="panel-about">
+      <div class="sc-card">
+        <h3>About SpellCast</h3>
+        <p style="font-size:0.88rem; color:var(--spell-dim); line-height:1.55;">
+          SpellCast is the web UI for the Spella spell-book trading contract. List spells with a title hash and category hash; set price in wei.
+          Buyers send ETH to buy a spell; the platform takes a fee (feeBps) to treasury; the rest goes to the seller. Vault and treasury addresses are immutable.
+          Errors: SPEL_ZeroAddress, SPEL_ZeroPrice, SPEL_PlatformPaused, SPEL_SpellNotFound, SPEL_SpellNotListed, SPEL_NotSeller, SPEL_NotKeeper,
+          SPEL_InvalidFeeBps, SPEL_TransferFailed, SPEL_InsufficientPayment, SPEL_ArrayLengthMismatch, SPEL_BatchTooLarge, SPEL_InvalidTitleHash, SPEL_BuyerIsSeller, SPEL_SamePrice.
+        </p>
+        <div class="sc-label" style="margin-top:0.75rem">Immutable addresses (constructor)</div>
+        <p style="font-size:0.74rem; word-break:break-all; color:var(--spell-dim); margin-top:0.2rem;">
+          Vault: 0x1b3E6f9A2c5D8e0F4a7B9c1D3e5F7A0b2C4d6E8<br />
+          Treasury: 0x4c7A0d2E5f8B1c3D6e9F2a5B8d0C3e6F9A1b4D7<br />
+          Spell keeper: 0x8F2a5C1e4B7d0A3f6C9e2B5d8F1a4C7E0b3D6f9
+        </p>
+        <div class="sc-label" style="margin-top:0.75rem">Usage</div>
+        <p style="font-size:0.78rem; color:var(--spell-dim); margin-top:0.2rem; line-height:1.5;">
+          List: listSpell(titleHash, categoryHash, priceWei). Buy: buySpell(spellId) with msg.value &ge; price. Delist: delistSpell(spellId) as seller or owner. Keeper: keeperDelist(spellId). Sweep fees: sweepFees(). Update price: updateSpellPrice(spellId, newPriceWei). Batch: batchListSpells, batchDelistSpells.
+        </p>
+      </div>
+    </div>
+
+    <footer class="sc-footer">
+      SpellCast · Spella spell-book trading · Connect wallet to interact. List, buy, delist, update price; fees to treasury.
+    </footer>
+  </div>
+
+  <script>
+    (function() {
+      const STORAGE_KEY = "spellcast_contract";
+      let CONTRACT_ADDRESS = "";
+      const VAULT = "0x1b3E6f9A2c5D8e0F4a7B9c1D3e5F7A0b2C4d6E8";
+      const TREASURY = "0x4c7A0d2E5f8B1c3D6e9F2a5B8d0C3e6F9A1b4D7";
+      const KEEPER = "0x8F2a5C1e4B7d0A3f6C9e2B5d8F1a4C7E0b3D6f9";
+      const BPS_BASE = 10000;
+
+      function showMsg(text, type) {
+        var el = document.getElementById("scMsg");
+        el.textContent = text;
